@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Clientes — Medusa Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .split { grid-template-columns: 420px 1fr; }
+  .c-nome { flex: 1; min-width: 0; }
+  .c-tel { width: 150px; font-size: 12px; color: var(--fg-muted); }
+  .c-seg { width: 130px; }
+  .c-st { width: 80px; text-align: center; }
+  .c-wa { width: 34px; display: flex; justify-content: center; }
+  .c-wa .icon-btn:hover { color: var(--success); }
+  .historico { background: var(--field); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .historico .acoes-h { display: flex; gap: 8px; }
+  .historico .acoes-h .btn { flex: 1; justify-content: center; }
+  .ativo-linha { display: flex; align-items: center; justify-content: space-between; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--fg-muted); }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/core.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="flex:1;">
+        <div class="page-title">Clientes</div>
+        <div class="page-sub">Cadastro e histórico de contatos</div>
+      </div>
+      <div class="acoes">
+        <div class="input-icon busca-top">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="input" id="busca" type="search" placeholder="Buscar cliente…">
+        </div>
+        <button class="btn sm" id="btnNovo"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo cliente</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <section class="painel">
+        <div class="form-titulo"><h2 id="formTitulo">Novo cadastro</h2>
+          <button type="button" class="link-btn" id="btnCancelar" hidden>Cancelar edição</button></div>
+
+        <form class="stack" id="form" novalidate autocomplete="off">
+          <div class="historico" id="historico" hidden>
+            <div class="mini-stats">
+              <div class="mini-stat"><div class="label">Orçamentos</div><div class="v" id="hOrc">0</div></div>
+              <div class="mini-stat"><div class="label">Pedidos</div><div class="v" id="hPed">0</div></div>
+              <div class="mini-stat"><div class="label">Recebido</div><div class="v" id="hRec" style="color:var(--success)">R$ 0</div></div>
+            </div>
+            <div class="acoes-h">
+              <button type="button" class="btn sm sec" id="hWhats">WhatsApp</button>
+              <button type="button" class="btn sm sec" id="hOrcamento">Novo orçamento</button>
+            </div>
+          </div>
+
+          <div class="secao">Identificação</div>
+          <div class="field"><label class="label" for="fNome">Nome / Empresa *</label>
+            <input class="input" id="fNome" maxlength="120" placeholder="Razão social ou nome…"></div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fResp">Responsável</label>
+              <input class="input" id="fResp" maxlength="80" placeholder="Nome…"></div>
+            <div class="field"><label class="label" for="fDoc">CNPJ / CPF</label>
+              <input class="input" id="fDoc" data-mask="doc" inputmode="numeric" placeholder="00.000.000/0001-00"></div>
+          </div>
+
+          <div class="secao">Contato</div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fWhats">WhatsApp</label>
+              <input class="input" id="fWhats" data-mask="tel" inputmode="tel" placeholder="(00) 00000-0000"></div>
+            <div class="field"><label class="label" for="fTel">Telefone</label>
+              <input class="input" id="fTel" data-mask="tel" inputmode="tel" placeholder="(00) 0000-0000"></div>
+          </div>
+          <div class="field"><label class="label" for="fEmail">E-mail</label>
+            <input class="input" id="fEmail" type="email" maxlength="120" placeholder="email@cliente.com"></div>
+
+          <div class="secao">Endereço</div>
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:12px;">
+            <div class="field"><label class="label" for="fRua">Rua / Avenida</label>
+              <input class="input" id="fRua" maxlength="120" placeholder="Nome da rua…"></div>
+            <div class="field"><label class="label" for="fNum">Nº</label>
+              <input class="input" id="fNum" maxlength="10" placeholder="Nº"></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fBairro">Bairro</label>
+              <input class="input" id="fBairro" maxlength="60" placeholder="Bairro…"></div>
+            <div class="field"><label class="label" for="fCidade">Cidade</label>
+              <input class="input" id="fCidade" maxlength="60" placeholder="Cidade"></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fUF">UF</label>
+              <input class="input" id="fUF" data-mask="uf" placeholder="UF"></div>
+            <div class="field"><label class="label" for="fCEP">CEP</label>
+              <input class="input" id="fCEP" data-mask="cep" inputmode="numeric" placeholder="00000-000"></div>
+          </div>
+
+          <div class="secao">Outros</div>
+          <div class="field"><label class="label" for="fSeg">Segmento / Nicho</label>
+            <input class="input" id="fSeg" list="segmentos" maxlength="40" placeholder="Moda, Restaurante…">
+            <datalist id="segmentos"></datalist></div>
+          <div class="field"><label class="label" for="fObs">Observações</label>
+            <textarea class="input" id="fObs" maxlength="1000" placeholder="Notas…"></textarea></div>
+          <div class="ativo-linha" id="linhaAtivo" hidden>
+            <span>Cliente ativo</span>
+            <label class="toggle"><input type="checkbox" id="fAtivo" checked><span class="trilho"></span></label>
+          </div>
+
+          <div class="msg" id="fMsg"></div>
+          <button class="btn block" id="btnSalvar" type="submit">Salvar cliente</button>
+          <div class="linha-acoes" id="acoesEdicao" hidden>
+            <button type="button" class="link-btn danger" id="btnExcluir">Excluir cliente</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="painel sem-pad">
+        <div class="lista-head">
+          <div class="cont" id="contagem">Clientes</div>
+          <div class="filtros" id="filtros" style="display:flex;gap:6px;">
+            <button type="button" class="chip on" data-f="todos">Todos</button>
+            <button type="button" class="chip" data-f="ativos">Ativos</button>
+            <button type="button" class="chip" data-f="inativos">Inativos</button>
+          </div>
+        </div>
+        <div class="lista" id="lista"><div class="loading" style="padding:40px;">Carregando…</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="assets/clientes.js"></script>
+</body>
+</html>

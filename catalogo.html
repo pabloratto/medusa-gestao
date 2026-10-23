@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Catálogo — Medusa Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .split { grid-template-columns: 400px 1fr; }
+  .lucro-box { background: var(--success-dim); border: 1px solid rgba(102,187,106,.2); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .lucro-box.neg { background: var(--danger-dim); border-color: rgba(255,107,107,.2); }
+  .lucro-box.vazio-l { background: var(--field); border-color: var(--border); }
+  .lucro-box .label { color: var(--success); }
+  .lucro-box.neg .label, .lucro-box.neg .lv, .lucro-box.neg .pct { color: var(--danger); }
+  .lucro-box.vazio-l .label, .lucro-box.vazio-l .lv, .lucro-box.vazio-l .pct { color: var(--fg-dim); }
+  .lucro-box .lv { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: var(--success); }
+  .lucro-box .ls { font-size: 11px; color: var(--fg-dim); }
+  .lucro-box .pct { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: var(--success); }
+  .prefixo { position: relative; }
+  .prefixo span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--fg-dim); font-size: 12px; font-weight: 600; }
+  .prefixo .input { padding-left: 38px; }
+  .k-nome { flex: 1; min-width: 0; }
+  .k-cat { width: 120px; }
+  .k-n { width: 92px; text-align: right; font-size: 12px; }
+  .k-un { width: 60px; text-align: center; font-size: 11px; color: var(--fg-dim); }
+  .filtros { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/core.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="flex:1;">
+        <div class="page-title">Catálogo de Produtos</div>
+        <div class="page-sub">Serviços e itens disponíveis para orçamento</div>
+      </div>
+      <div class="acoes">
+        <div class="input-icon busca-top">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="input" id="busca" type="search" placeholder="Buscar produto…">
+        </div>
+        <button class="btn sm" id="btnNovo"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo item</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <section class="painel">
+        <div class="form-titulo"><h2 id="formTitulo">Novo item</h2>
+          <button type="button" class="link-btn" id="btnCancelar" hidden>Cancelar edição</button></div>
+        <form class="stack" id="form" novalidate autocomplete="off">
+          <div class="field"><label class="label" for="fNome">Nome do serviço / produto *</label>
+            <input class="input" id="fNome" maxlength="120" placeholder="Ex: Banner 90×60cm"></div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fCat">Categoria</label>
+              <select class="input" id="fCat">
+                <option value="">— Selecione —</option>
+                <option>Impressão</option><option>Personalização</option><option>Gravação</option>
+                <option>Embalagem</option><option>Arte/Design</option><option>Marketing</option><option>Outro</option>
+              </select></div>
+            <div class="field"><label class="label" for="fUn">Unidade</label>
+              <select class="input" id="fUn">
+                <option>Un.</option><option>m²</option><option>Metro</option><option>cm</option><option>kg</option>
+                <option>Cento</option><option>Milheiro</option><option>Conjunto</option><option>Hora</option><option>Mês</option>
+              </select></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label class="label" for="fCusto">Preço de custo (R$)</label>
+              <div class="prefixo"><span>R$</span><input class="input" id="fCusto" inputmode="decimal" placeholder="0,00"></div></div>
+            <div class="field"><label class="label" for="fVenda">Preço de venda (R$) *</label>
+              <div class="prefixo"><span>R$</span><input class="input" id="fVenda" inputmode="decimal" placeholder="0,00"></div></div>
+          </div>
+          <div class="lucro-box vazio-l" id="lucroBox">
+            <div>
+              <div class="label">Lucro líquido estimado</div>
+              <div class="lv" id="lucroVal">R$ 0,00</div>
+              <div class="ls" id="lucroSub">Preencha custo e venda para calcular</div>
+            </div>
+            <div class="pct" id="lucroPct">0%</div>
+          </div>
+          <div class="field"><label class="label" for="fPrazo">Prazo médio (dias)</label>
+            <input class="input" id="fPrazo" inputmode="numeric" maxlength="4" placeholder="Ex: 3"></div>
+          <div class="field"><label class="label" for="fDesc">Descrição / Observação</label>
+            <textarea class="input" id="fDesc" rows="3" maxlength="500" placeholder="Materiais, tamanhos disponíveis, detalhes…"></textarea></div>
+          <div class="msg" id="fMsg"></div>
+          <button class="btn block" id="btnSalvar" type="submit">Salvar item</button>
+          <div class="linha-acoes" id="acoesEdicao" hidden>
+            <button type="button" class="link-btn" id="btnDuplicar">Duplicar item</button>
+            <button type="button" class="link-btn danger" id="btnExcluir">Excluir item</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="painel sem-pad">
+        <div class="lista-head">
+          <div class="cont" id="contagem">Catálogo</div>
+          <div class="filtros" id="filtros"></div>
+        </div>
+        <div class="lista" id="lista"><div class="loading" style="padding:40px;">Carregando…</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="assets/catalogo.js"></script>
+</body>
+</html>

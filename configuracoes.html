@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Configurações — Medusa Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .corpo { flex: 1; overflow: hidden; display: grid; grid-template-columns: 220px 1fr; }
+  .abas { border-right: 1px solid var(--line); padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .aba { text-align: left; background: none; border: none; padding: 10px 14px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--fg-muted); }
+  .aba:hover { background: var(--surface-alt); color: var(--fg); }
+  .aba.on { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+  .conteudo { overflow-y: auto; padding: 24px 32px 40px; }
+  .painel-aba { display: none; flex-direction: column; gap: 16px; max-width: 860px; }
+  .painel-aba.on { display: flex; }
+  .cfg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .cfg-tit { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; }
+  .cfg-desc { font-size: 12px; color: var(--fg-dim); margin-top: -10px; }
+  .g4 { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; }
+  .logo-linha { display: flex; align-items: center; gap: 16px; }
+  .logo-prev { width: 72px; height: 72px; border-radius: 14px; border: 1px solid var(--border); background: #0A0A0A; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .logo-prev img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-prev .logo { width: 72px; height: 72px; font-size: 30px; border-radius: 0; }
+  .toggle-linha { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-linha:last-child { border-bottom: none; }
+  .toggle-linha .t { font-size: 13px; font-weight: 600; }
+  .toggle-linha .s { font-size: 11px; color: var(--fg-dim); }
+  .prefixo { position: relative; }
+  .prefixo span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--fg-dim); font-size: 12px; font-weight: 600; }
+  .prefixo .input { padding-left: 38px; }
+  .sufixo { position: relative; }
+  .sufixo span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--fg-dim); font-size: 12px; font-weight: 600; }
+  .conta-linha { display: flex; align-items: center; gap: 14px; }
+  .conta-linha .avatar { width: 40px; height: 40px; font-size: 15px; }
+  .acoes-linha { display: flex; gap: 10px; flex-wrap: wrap; }
+  #topSalvar.salvo { background: var(--surface-alt); color: var(--fg-dim); }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/core.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar"></aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="flex:1;">
+        <div class="page-title" id="tTitulo">Empresa</div>
+        <div class="page-sub" id="tSub">Dados e identidade da empresa</div>
+      </div>
+      <button class="btn sm" id="topSalvar">Salvar alterações</button>
+    </div>
+
+    <div class="corpo">
+      <nav class="abas" id="abas">
+        <button class="aba on" data-aba="empresa">Empresa</button>
+        <button class="aba" data-aba="documentos">Documentos</button>
+        <button class="aba" data-aba="pagamentos">Pagamentos</button>
+        <button class="aba" data-aba="caixa">Caixa</button>
+        <button class="aba" data-aba="seguranca">Conta e segurança</button>
+      </nav>
+
+      <form class="conteudo" id="form" novalidate autocomplete="off">
+        <!-- EMPRESA -->
+        <section class="painel-aba on" id="aba-empresa">
+          <div class="cfg-card">
+            <div class="cfg-tit">Identidade da empresa</div>
+            <div class="cfg-desc">Esses dados aparecem em orçamentos, recibos e documentos gerados.</div>
+            <div class="logo-linha">
+              <div class="logo-prev" id="logoPrev"></div>
+              <div>
+                <div style="font-weight:600;font-size:13px;">Logo da empresa</div>
+                <div style="font-size:11px;color:var(--fg-dim);margin:2px 0 8px;">PNG, JPG ou SVG · quadrada fica melhor</div>
+                <div class="acoes-linha">
+                  <button type="button" class="btn sm sec" id="logoTrocar">Trocar logo</button>
+                  <button type="button" class="btn sm sec" id="logoRemover">Remover</button>
+                  <input type="file" id="logoArquivo" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+                </div>
+              </div>
+            </div>
+            <div class="g2">
+              <div class="field"><label class="label" for="e_nome">Nome da empresa</label><input class="input" id="e_nome" data-k="empresa.nome"></div>
+              <div class="field"><label class="label" for="e_fantasia">Nome fantasia</label><input class="input" id="e_fantasia" data-k="empresa.fantasia" placeholder="Opcional"></div>
+              <div class="field"><label class="label" for="e_cnpj">CNPJ</label><input class="input" id="e_cnpj" data-k="empresa.cnpj" data-mask="doc"></div>
+              <div class="field"><label class="label" for="e_ie">Inscrição Estadual</label><input class="input" id="e_ie" data-k="empresa.ie"></div>
+              <div class="field"><label class="label" for="e_resp">Responsável (assina os documentos)</label><input class="input" id="e_resp" data-k="empresa.responsavel" placeholder="Seu nome"></div>
+            </div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Contato e localização</div>
+            <div class="cfg-desc">Exibidos no rodapé de recibos e orçamentos.</div>
+            <div class="g2">
+              <div class="field"><label class="label" for="e_tel">Telefone / WhatsApp</label><input class="input" id="e_tel" data-k="empresa.telefone" data-mask="tel"></div>
+              <div class="field"><label class="label" for="e_email">E-mail</label><input class="input" id="e_email" type="email" data-k="empresa.email"></div>
+              <div class="field"><label class="label" for="e_end">Endereço</label><input class="input" id="e_end" data-k="empresa.endereco" placeholder="Rua, número"></div>
+              <div class="field"><label class="label" for="e_comp">Complemento</label><input class="input" id="e_comp" data-k="empresa.complemento"></div>
+            </div>
+            <div class="g4">
+              <div class="field"><label class="label" for="e_bairro">Bairro</label><input class="input" id="e_bairro" data-k="empresa.bairro"></div>
+              <div class="field"><label class="label" for="e_cidade">Cidade</label><input class="input" id="e_cidade" data-k="empresa.cidade"></div>
+              <div class="field"><label class="label" for="e_uf">UF</label><input class="input" id="e_uf" data-k="empresa.uf" data-mask="uf"></div>
+              <div class="field"><label class="label" for="e_cep">CEP</label><input class="input" id="e_cep" data-k="empresa.cep" data-mask="cep"></div>
+            </div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Metas financeiras</div>
+            <div class="cfg-desc">Usadas no painel de Gestão para calcular o progresso mensal.</div>
+            <div class="g3">
+              <div class="field"><label class="label" for="m_fat">Meta de faturamento / mês</label><div class="prefixo"><span>R$</span><input class="input" id="m_fat" data-k="metas.faturamentoCentavos" data-tipo="valor" inputmode="decimal"></div></div>
+              <div class="field"><label class="label" for="m_cli">Meta de novos clientes / mês</label><input class="input" id="m_cli" data-k="metas.novosClientes" data-tipo="int" inputmode="numeric"></div>
+              <div class="field"><label class="label" for="m_mar">Margem mínima desejada</label><div class="sufixo"><input class="input" id="m_mar" data-k="metas.margem" data-tipo="int" inputmode="numeric"><span>%</span></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DOCUMENTOS -->
+        <section class="painel-aba" id="aba-documentos">
+          <div class="cfg-card">
+            <div class="cfg-tit">Numeração automática</div>
+            <div class="cfg-desc">Formato dos números de orçamentos e recibos. O próximo número sobe sozinho a cada documento.</div>
+            <div class="g4" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+              <div class="field"><label class="label" for="d_op">Prefixo do orçamento</label><input class="input" id="d_op" data-k="docs.orcPrefixo"></div>
+              <div class="field"><label class="label" for="d_on">Próximo número</label><input class="input" id="d_on" data-k="docs.orcProximo" data-tipo="int" inputmode="numeric"></div>
+              <div class="field"><label class="label" for="d_rp">Prefixo do recibo</label><input class="input" id="d_rp" data-k="docs.recPrefixo"></div>
+              <div class="field"><label class="label" for="d_rn">Próximo número</label><input class="input" id="d_rn" data-k="docs.recProximo" data-tipo="int" inputmode="numeric"></div>
+            </div>
+            <div class="g3">
+              <div class="field"><label class="label" for="d_pn">Próximo nº de pedido</label><input class="input" id="d_pn" data-k="docs.pedProximo" data-tipo="int" inputmode="numeric"></div>
+              <div class="field"><label class="label" for="d_val">Validade do orçamento (dias)</label><input class="input" id="d_val" data-k="docs.validadeDias" data-tipo="int" inputmode="numeric"></div>
+            </div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Modelo padrão de orçamento</div>
+            <div class="cfg-desc">Textos que entram automaticamente em cada novo orçamento.</div>
+            <div class="field"><label class="label" for="d_intro">Texto de introdução</label><textarea class="input" id="d_intro" data-k="docs.intro" rows="2"></textarea></div>
+            <div class="field"><label class="label" for="d_cond">Condições de pagamento padrão</label><textarea class="input" id="d_cond" data-k="docs.condicoes" rows="2"></textarea></div>
+            <div class="field"><label class="label" for="d_prazo">Prazo de entrega padrão</label><input class="input" id="d_prazo" data-k="docs.prazoEntrega"></div>
+          </div>
+        </section>
+
+        <!-- PAGAMENTOS -->
+        <section class="painel-aba" id="aba-pagamentos">
+          <div class="cfg-card">
+            <div class="cfg-tit">Métodos aceitos</div>
+            <div class="cfg-desc">Aparecem como opção em orçamentos, pedidos e recibos.</div>
+            <div>
+              <div class="toggle-linha"><div><div class="t">PIX</div><div class="s">Transferência instantânea</div></div><label class="toggle"><input type="checkbox" data-k="pagamentos.pix"><span class="trilho"></span></label></div>
+              <div class="toggle-linha"><div><div class="t">Boleto</div><div class="s">Pagamento por boleto bancário</div></div><label class="toggle"><input type="checkbox" data-k="pagamentos.boleto"><span class="trilho"></span></label></div>
+              <div class="toggle-linha"><div><div class="t">Cartão</div><div class="s">Crédito ou débito</div></div><label class="toggle"><input type="checkbox" data-k="pagamentos.cartao"><span class="trilho"></span></label></div>
+              <div class="toggle-linha"><div><div class="t">Dinheiro</div><div class="s">Pagamento presencial</div></div><label class="toggle"><input type="checkbox" data-k="pagamentos.dinheiro"><span class="trilho"></span></label></div>
+              <div class="toggle-linha"><div><div class="t">Transferência / Depósito</div><div class="s">TED ou depósito em conta</div></div><label class="toggle"><input type="checkbox" data-k="pagamentos.transferencia"><span class="trilho"></span></label></div>
+            </div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Dados bancários para recebimento</div>
+            <div class="cfg-desc">Exibidos nos orçamentos (PDF e WhatsApp) para o cliente pagar.</div>
+            <div class="g2">
+              <div class="field"><label class="label" for="p_pix">Chave PIX</label><input class="input" id="p_pix" data-k="pagamentos.chavePix"></div>
+              <div class="field"><label class="label" for="p_fav">Favorecido</label><input class="input" id="p_fav" data-k="pagamentos.favorecido" placeholder="Nome que aparece no PIX"></div>
+              <div class="field"><label class="label" for="p_banco">Banco</label><input class="input" id="p_banco" data-k="pagamentos.banco" placeholder="Ex: Nubank (260)"></div>
+              <div class="field"><label class="label" for="p_tipo">Tipo de conta</label><select class="input" id="p_tipo" data-k="pagamentos.tipoConta"><option>Conta Corrente</option><option>Conta Poupança</option><option>Conta Pagamento</option></select></div>
+              <div class="field"><label class="label" for="p_ag">Agência</label><input class="input" id="p_ag" data-k="pagamentos.agencia"></div>
+              <div class="field"><label class="label" for="p_conta">Conta</label><input class="input" id="p_conta" data-k="pagamentos.conta"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CAIXA -->
+        <section class="painel-aba" id="aba-caixa">
+          <div class="cfg-card">
+            <div class="cfg-tit">Saldo inicial</div>
+            <div class="cfg-desc">Quanto havia em caixa antes de começar a usar o sistema. Entra no "Saldo atual".</div>
+            <div class="g3"><div class="field"><label class="label" for="c_saldo">Saldo inicial</label><div class="prefixo"><span>R$</span><input class="input" id="c_saldo" data-k="caixa.saldoInicialCentavos" data-tipo="valor" data-neg="1" inputmode="decimal"></div></div></div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Categorias</div>
+            <div class="cfg-desc">Uma categoria por linha. Lançamentos antigos mantêm a categoria que tinham.</div>
+            <div class="g2">
+              <div class="field"><label class="label" for="c_ent">Categorias de entrada</label><textarea class="input" id="c_ent" data-k="caixa.catEntrada" data-tipo="lista" rows="10"></textarea></div>
+              <div class="field"><label class="label" for="c_sai">Categorias de saída</label><textarea class="input" id="c_sai" data-k="caixa.catSaida" data-tipo="lista" rows="10"></textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SEGURANÇA -->
+        <section class="painel-aba" id="aba-seguranca">
+          <div class="cfg-card">
+            <div class="cfg-tit">Sua conta</div>
+            <div class="conta-linha"><div class="avatar" id="contaIni">?</div><div><div style="font-weight:600" id="contaEmail"></div><div style="font-size:11px;color:var(--fg-dim)" id="contaModo"></div></div>
+              <div style="flex:1"></div><button type="button" class="btn sm sec" id="btnSairConta">Sair do sistema</button></div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Alterar senha</div>
+            <div class="cfg-desc">Use uma senha forte, com letras, números e símbolos.</div>
+            <div class="g3">
+              <div class="field"><label class="label" for="s_atual">Senha atual</label><input class="input" id="s_atual" type="password" autocomplete="current-password"></div>
+              <div class="field"><label class="label" for="s_nova">Nova senha</label><input class="input" id="s_nova" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+              <div class="field"><label class="label" for="s_conf">Confirmar nova senha</label><input class="input" id="s_conf" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
+            </div>
+            <div class="msg" id="sMsg"></div>
+            <div><button type="button" class="btn sm" id="btnSenha">Atualizar senha</button></div>
+          </div>
+          <div class="cfg-card">
+            <div class="cfg-tit">Backup dos dados</div>
+            <div class="cfg-desc">Baixe uma cópia de tudo (clientes, catálogo, orçamentos, pedidos, recibos, caixa e configurações) ou restaure um backup.</div>
+            <div class="acoes-linha">
+              <button type="button" class="btn sm sec" id="btnBackup">Baixar backup (.json)</button>
+              <button type="button" class="btn sm sec" id="btnRestaurar">Restaurar backup…</button>
+              <input type="file" id="arqRestaurar" accept="application/json,.json" hidden>
+            </div>
+            <div class="msg" id="bMsg"></div>
+          </div>
+        </section>
+      </form>
+    </div>
+  </main>
+</div>
+<script src="assets/configuracoes.js"></script>
+</body>
+</html>
