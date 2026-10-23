@@ -1,5 +1,5 @@
 # Site do Medusa Gestão no Netlify.
-# Ao conectar o repositório, use "Base directory" = medusa-app.
+# Base directory, build command e publish directory ficam vazios no painel: este arquivo cuida disso.
 [build]
   publish = "."
 
