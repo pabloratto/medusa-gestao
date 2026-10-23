@@ -3,6 +3,11 @@
 [build]
   publish = "."
 
+# A chave web do Firebase é pública por natureza (fica visível no site).
+# Avisa o detector de segredos do Netlify para não barrar a publicação por causa dela.
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyD408cCWEUrC6klWKBMxwxfsId2YDljs78"
+
 [[headers]]
   for = "/*"
   [headers.values]
